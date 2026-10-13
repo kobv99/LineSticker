@@ -45,7 +45,10 @@ def lighten(c, t: float) -> tuple:
 # ---------- low-level helpers ----------
 
 def trim(im: Image.Image) -> Image.Image:
-    return im.crop(im.getchannel("A").point(lambda v: 255 if v > 16 else 0).getbbox())
+    bounds = im.getchannel("A").point(lambda v: 255 if v > 16 else 0).getbbox()
+    if bounds is None:
+        raise ValueError("source artwork has no visible pixels")
+    return im.crop(bounds)
 
 
 def downsample(big: Image.Image, size: tuple[int, int]) -> Image.Image:

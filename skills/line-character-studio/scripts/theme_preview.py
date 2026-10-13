@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+from font_utils import resolve_font_for_text
 
 TABS = [("Home", 29, 30), ("Chats", 3, 4), ("VOOM", 33, 34), ("Shopping", 35, 36), ("Calls", 7, 8),
         ("News", 25, 26), ("TODAY", 31, 32), ("Wallet", 27, 28), ("Apps", 37, 38)]
@@ -15,7 +16,8 @@ BG, INK, MUTED = (243, 245, 249), (22, 26, 34), (110, 118, 132)
 
 
 def F(size, bold=False):
-    return ImageFont.truetype("/System/Library/Fonts/HelveticaNeue.ttc", size, index=1 if bold else 0)
+    path, index = resolve_font_for_text()
+    return ImageFont.truetype(path, size, index=index)
 
 
 def img(d, name):

@@ -9,8 +9,8 @@ Built while making the mascot, stickers, theme and emoji for [hundredable.com](h
 **Claude Code (CLI / desktop app)** — clone the skill into your skills folder:
 
 ```bash
-git clone https://github.com/Boriwatopal/agent-skill-line-character-studio.git /tmp/lcs && \
-cp -R /tmp/lcs/skills/line-character-studio ~/.claude/skills/ && rm -rf /tmp/lcs
+git clone https://github.com/kobv99/LineSticker.git /tmp/lcs && \
+cp -R /tmp/lcs/skills/line-character-studio ~/.claude/skills/
 ```
 
 Or for one project only: copy `skills/line-character-studio` into `<project>/.claude/skills/`.
@@ -25,8 +25,8 @@ Then just ask: *"make LINE stickers from my logo"*, *"create my character in dif
   ```bash
   python3 ~/.claude/skills/line-character-studio/scripts/set_api_key.py
   ```
-  The key is stored only in the skill folder's `.env` (readable only by you) and checked with a free API call. `.env` is git-ignored — never commit it.
-- Python 3.9+ with Pillow, numpy and scipy (`pip install pillow numpy scipy`).
+  The key is stored in the skill folder's `.env` (0600 permissions on POSIX; check local Windows ACLs) and verified with an API call. `.env` is git-ignored — never commit it.
+- Python 3.10+ with Pillow, numpy, scipy and fonttools (`pip install -r requirements.txt`).
 - A LINE Creators Market account to submit the results.
 
 ## What it makes
@@ -84,5 +84,17 @@ Set `LINE_STUDIO_FONT` to a licensed font if no supported system font is found.
 Do not paste API keys in chat. For testing run `python -m pip install -r requirements-dev.txt`
 then `python -m pytest -q`.
 
-The original prebuilt `dist/*.skill` is intentionally omitted: rebuild it
-from the modified sources before distributing the Claude skill.
+The downloadable skill archive is regenerated from the current source with
+`python tools/build_skill.py`, excluding credentials and temporary files.
+
+## Validation and release checks
+
+- Sticker files: permitted count, sequential names, transparent margins, dimensions, per-image limit and **ZIP ≤ 60 MB**.
+- Theme files: exact 62 filenames, dimensions and required opacity (including palette transparency); unexpected files rejected.
+- Emoji: 8–40 images, explicit checks even with `python -O`, and **ZIP < 20 MB**.
+- Packaging writes ZIP archives atomically. Source PNG processing rejects invisible artwork.
+- API image requests retry bounded 429/5xx responses with exponential backoff; billing/auth errors fail immediately. A transient server failure after accepting a POST can still lead to duplicate charges on retry.
+- Thai captions require Pillow RAQM/HarfBuzz and a font containing Thai glyphs. Set `LINE_STUDIO_FONT` to your local licensed font if needed.
+- Automated tests use fake images and mocked HTTP responses. **Live OpenAI billing and LINE Creators Market acceptance are not covered by CI**.
+
+Rebuild the installable `.skill` package with `python tools/build_skill.py`.

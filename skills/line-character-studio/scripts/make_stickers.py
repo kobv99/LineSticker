@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import json
 import math
-import os
 import sys
 from pathlib import Path
 
@@ -27,23 +26,7 @@ MARGIN = 12                            # LINE wants ~10px clear; +2 absorbs down
 BORDER = 5                             # white die-cut border (1x px)
 TEXT_BLACK = 3                         # caption black outline (1x px)
 TEXT_WHITE = TEXT_BLACK + BORDER       # caption white ring ends where the die-cut border ends
-FONT = None  # override via LINE_STUDIO_FONT
-
-def resolve_font():
-    override = os.environ.get("LINE_STUDIO_FONT")
-    if override and not Path(override).is_file():
-        raise FileNotFoundError(f"LINE_STUDIO_FONT not found: {override}")
-    candidates = [override,
-        "/usr/share/fonts/truetype/noto/NotoSansThai-Bold.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
-        "/System/Library/Fonts/Supplemental/GillSans.ttc",
-        "C:/Windows/Fonts/tahomabd.ttf",
-        "C:/Windows/Fonts/arialbd.ttf"]
-    for candidate in candidates:
-        if candidate and Path(candidate).is_file():
-            return candidate
-    raise FileNotFoundError("No font found; set LINE_STUDIO_FONT to a licensed font")
+from font_utils import resolve_font_for_text
 
 FONT_SIZES = [66, 60, 56, 52, 48]      # narrow range keeps captions consistent across the set
 SCALES = [1.0, 0.94, 0.88, 0.82, 0.76, 0.70]
@@ -56,8 +39,9 @@ UX1, UY1 = W - MARGIN - BORDER, H - MARGIN - BORDER
 UW, UH = UX1 - UX0, UY1 - UY0
 
 
-def font(px: int) -> ImageFont.FreeTypeFont:
-    return ImageFont.truetype(resolve_font(), px)
+def font(px: int, text: str = "") -> ImageFont.FreeTypeFont:
+    path, index = resolve_font_for_text(text)
+    return ImageFont.truetype(path, px, index=index)
 
 
 def text_box(text: str, f, stroke: int, spacing: int) -> tuple[int, int, int, int]:
@@ -72,8 +56,8 @@ def caption(lines: list[str], fs: int, scale: int) -> tuple[Image.Image, Image.I
 
     The core (fill + black outline) drives the die-cut border; the full image carries its own
     white ring so the caption stays legible where it overlaps the mascot."""
-    f = font(fs * scale)
     text = "\n".join(lines)
+    f = font(fs * scale, text)
     sw, sb = TEXT_WHITE * scale, TEXT_BLACK * scale
     spacing = -int(0.10 * fs * scale)
     l, t, r, b = text_box(text, f, sw, spacing)
@@ -255,7 +239,7 @@ def add_sign_text(mascot: Image.Image, lines: list[str]) -> Image.Image:
     box_w, box_h = (u.max() - u.min()) * 0.9, (v.max() - v.min()) * 0.8
     fs = 200
     while fs > 10:
-        f = font(fs)
+        f = font(fs, "\n".join(lines))
         l, t, r, b = text_box("\n".join(lines), f, 0, -int(0.08 * fs))
         if r - l <= box_w and b - t <= box_h:
             break
@@ -293,7 +277,7 @@ def add_wall(mascot: Image.Image, lines: list[str] | None = None) -> Image.Image
         stroke = LINE_W
         fs = 400
         while fs > 10:
-            f = font(fs)
+            f = font(fs, "\n".join(lines))
             l, t, r, b = text_box("\n".join(lines), f, stroke, -int(0.08 * fs))
             if r - l <= box_w and b - t <= box_h:
                 break
@@ -306,7 +290,10 @@ def add_wall(mascot: Image.Image, lines: list[str] | None = None) -> Image.Image
 
 
 def trim(im: Image.Image) -> Image.Image:
-    return im.crop(im.getchannel("A").point(lambda v: 255 if v > 16 else 0).getbbox())
+    bounds = im.getchannel("A").point(lambda v: 255 if v > 16 else 0).getbbox()
+    if bounds is None:
+        raise ValueError("source artwork has no visible pixels")
+    return im.crop(bounds)
 
 
 def load_art(e: dict) -> tuple[Image.Image, list]:

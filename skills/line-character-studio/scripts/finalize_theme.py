@@ -4,7 +4,7 @@
 Usage: finalize_theme.py THEME_DIR ZIP_PATH
 """
 import sys
-import zipfile
+from archive_utils import write_flat_zip
 from pathlib import Path
 
 import numpy as np
@@ -33,7 +33,7 @@ def check(p: Path, size) -> list[str]:
         probs.append(f"format {im.format}")
     if im.size != size:
         probs.append(f"size {im.size} != {size}")
-    if p.name in MUST_BE_OPAQUE and im.mode == "RGBA" and np.asarray(im)[..., 3].min() < 255:
+    if p.name in MUST_BE_OPAQUE and im.convert("RGBA").getchannel("A").getextrema()[0] < 255:
         probs.append("has transparency")
     if p.stat().st_size > MAX_BYTES:
         probs.append(f"{p.stat().st_size / 1e6:.2f} MB")
@@ -49,11 +49,9 @@ def main(theme_dir: str, zip_path: str):
     print(f"expected {len(EXPECTED)}, missing {missing or 'none'}, extra {extra or 'none'}")
     for n, v in bad.items():
         print("  PROBLEM", n, v)
-    if missing or bad:
+    if missing or extra or bad:
         sys.exit("not packaged")
-    with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as zf:
-        for n in EXPECTED:
-            zf.write(d / n, arcname=n)                  # flat ZIP, LINE's exact file names
+    write_flat_zip([d / n for n in EXPECTED], z)
     sizes = sorted(((d / n).stat().st_size, n) for n in EXPECTED)
     print(f"OK: {len(EXPECTED)} images, largest {sizes[-1][1]} {sizes[-1][0] / 1024:.0f} KB -> {z} ({z.stat().st_size / 1024:.0f} KB)")
 

@@ -1,10 +1,11 @@
-name: Tests
+name: Tests and skill build
 on:
   push:
   pull_request:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.11', '3.12']
@@ -15,5 +16,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -r requirements-dev.txt
-      - run: python -m compileall -q skills/line-character-studio/scripts
+      - run: python -m compileall -q skills/line-character-studio/scripts tools tests
       - run: python -m pytest -q
+      - run: python tools/build_skill.py
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
+        with:
+          name: line-character-studio-skill
+          path: dist/line-character-studio.skill
+          if-no-files-found: error

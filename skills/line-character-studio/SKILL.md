@@ -18,15 +18,13 @@ non-technical; describe results in plain words, not file-format jargon.
 ## Step 0 — OpenAI API key
 
 Check first: `python3 SK/scripts/set_api_key.py --check`.
-If there is no working key, ask the user for one (they create it at
-https://platform.openai.com/api-keys). Offer two ways, safest first:
-1. They run `python3 SK/scripts/set_api_key.py` in their own terminal (hidden prompt; the key never
-   enters the chat).
-2. Never accept credentials through chat. Have the user enter keys in their own terminal.
-   Do not include credentials in command-line arguments, prompts or source.
+If credentials are missing, ask the user to create a key at
+https://platform.openai.com/api-keys and run `python3 SK/scripts/set_api_key.py`
+in their own interactive terminal. Never request, accept, or transmit the key through chat,
+CLI arguments, project prompts or pasted command lines.
 
-The key is saved to `SK/.env` (chmod 600) and verified with a free call. Never write it into the
-project folder, a prompt file, or a reply.
+The key is stored at `SK/.env` (0600 on POSIX; verify file ACLs on Windows) and checked
+via OpenAI API. Never include it in chat, project prompts, or output files.
 
 **Billing:** image generation costs money on the user's OpenAI account. If a run fails with
 `HTTP 429 … insufficient_quota / credit_balance_exhausted`, stop and tell the user to add credits at
@@ -77,7 +75,7 @@ Order by use: hello, thanks, OK, sorry, laugh, love… first.
    `sign` (writes the caption onto a blank sign the mascot holds), `wall` (peek pose gripping a
    ledge), `banner` (caption written on the ledge), optional `prefer: top|bottom|left|right`.
    Add `{"kind":"main",…}` and `{"kind":"tab",…}` entries. No `lines` = no-text sticker.
-2. `python3 SK/scripts/make_stickers.py spec.json WORKDIR/stickers_build` (set `LINE_STUDIO_FONT` to a licensed font; default Gill Sans UltraBold, brand-blue fill, black outline, 5 px
+2. `python3 SK/scripts/make_stickers.py spec.json WORKDIR/stickers_build` (set `LINE_STUDIO_FONT` to a licensed font when necessary; brand-blue fill, black outline, 5 px
    white die-cut border for dark mode).
 3. `python3 SK/scripts/finalize_line.py WORKDIR/stickers_build "WORKDIR/LINE Stickers" WORKDIR/LINE-stickers-upload.zip`
    — trims to content + 10 px, even sizes, validates every rule, writes the flat ZIP.

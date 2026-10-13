@@ -4,7 +4,7 @@
 Usage: finalize_line.py SRC_DIR DEST_DIR ZIP_PATH
 """
 import sys
-import zipfile
+from archive_utils import write_flat_zip
 from pathlib import Path
 
 import numpy as np
@@ -83,14 +83,8 @@ def main(src: Path, dest: Path, zip_path: Path):
         bad += bool(probs)
         print(f"{n:9} {Image.open(p).size!s:12} {p.stat().st_size / 1024:6.1f} KB  {'OK' if not probs else probs}")
     if bad:
-        if zip_path.exists():
-            zip_path.unlink()
         raise ValueError(f"Validation failed for {bad} file(s); ZIP not created")
-    if zip_path.exists():
-        zip_path.unlink()
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-        for n in names:
-            z.write(dest / n, arcname=n)          # flat: no folders inside the ZIP
+    write_flat_zip([dest / n for n in names], zip_path, max_bytes=60_000_000)
     print(f"\n{len(names)} files, {bad} with problems -> {zip_path} ({zip_path.stat().st_size / 1024:.0f} KB)")
 
 

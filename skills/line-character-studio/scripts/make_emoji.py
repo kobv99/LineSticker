@@ -6,7 +6,7 @@ SRC_DIR: trimmed transparent head-*.png / emo-*.png. Files named in ORDER come f
 any other head-*/emo-* files follow alphabetically. LINE allows 8-40 emoji per set.
 """
 import sys
-import zipfile
+from archive_utils import write_flat_zip
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -18,6 +18,19 @@ ORDER = ["head-happy", "head-laughing", "emo-love", "emo-thumbs", "emo-ok", "emo
          "emo-blush", "emo-sweat", "head-surprised", "emo-shocked", "emo-thinking", "emo-angry", "emo-wave",
          "emo-kiss", "emo-stars", "emo-party", "emo-cool", "emo-tongue", "emo-sleepy", "emo-dizzy", "emo-sick",
          "emo-facepalm"]
+
+
+def validate_emoji_image(path: Path, tab: bool = False) -> None:
+    """Validate output independently of Python optimization flags."""
+    with Image.open(path) as im:
+        want = (96, 74) if tab else (180, 180)
+        if im.format != "PNG" or im.size != want or im.mode != "RGBA":
+            raise ValueError(f"{path.name}: expected RGBA PNG {want}, got {im.mode} {im.size}")
+        minimum, maximum = im.getchannel("A").getextrema()
+        if minimum != 0 or maximum == 0:
+            raise ValueError(f"{path.name}: must have artwork and transparent pixels")
+    if path.stat().st_size > 1_000_000:
+        raise ValueError(f"{path.name}: exceeds 1 MB")
 
 
 def main(src, out, zip_path, preview):
@@ -38,13 +51,8 @@ def main(src, out, zip_path, preview):
     place(tab, (96, 74), (0, 0, 96, 74), border=2).save(out / "tab.png", optimize=True)
     names.append("tab.png")
     for n in names:
-        im = Image.open(out / n)
-        want = (96, 74) if n == "tab.png" else (180, 180)
-        assert im.size == want and im.mode == "RGBA" and im.getchannel("A").getextrema()[0] == 0, n
-        assert (out / n).stat().st_size <= 1_000_000, n
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-        for n in names:
-            z.write(out / n, arcname=n)
+        validate_emoji_image(out / n, tab=n == "tab.png")
+    write_flat_zip([out / n for n in names], Path(zip_path), max_bytes=19_999_999)
     # preview: grid at full size on light + dark, plus a mock message with inline emoji
     cols, cell = 8, 196
     rows = (len(stems) + cols - 1) // cols

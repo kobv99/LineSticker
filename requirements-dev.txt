@@ -1,4 +1,2 @@
-Pillow>=10,<13
-numpy>=1.24,<3
-scipy>=1.11,<2
+-r requirements.txt
 pytest>=8,<10

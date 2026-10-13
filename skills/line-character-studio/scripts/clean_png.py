@@ -27,11 +27,17 @@ def clean(src: Path, out_dir: Path, cut_bottom: int | None = None) -> str:
     alpha = a[..., 3]
     alpha[alpha >= SOLID] = 255
     if cut_bottom is not None:
+        if not 0 <= cut_bottom <= alpha.shape[0]:
+            raise ValueError(f"cut_bottom must be between 0 and {alpha.shape[0]}")
         alpha[cut_bottom:] = 0
     a[alpha == 0, :3] = 255
 
     ys, xs = np.nonzero(alpha > EDGE_ALPHA)
     h, w = alpha.shape
+    if cut_bottom is not None and not 0 <= cut_bottom <= h:
+        raise ValueError(f"cut_bottom must be between 0 and {h}")
+    if len(xs) == 0:
+        raise ValueError(f"{src.name}: no visible pixels after alpha cleanup")
     top, bottom, left, right = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
     top = top if top <= 2 else max(0, top - PAD)
     left = left if left <= 2 else max(0, left - PAD)
@@ -41,6 +47,7 @@ def clean(src: Path, out_dir: Path, cut_bottom: int | None = None) -> str:
 
     im = Image.fromarray(a[top:bottom, left:right])
     dst = out_dir / src.name
+    out_dir.mkdir(parents=True, exist_ok=True)
     im.save(dst, optimize=True)
     return f"{src.name}: {w}x{h} -> {im.width}x{im.height}"
 
