@@ -1,6 +1,8 @@
-# LINE Character Studio - Agent Skill
+# LineSticker — LINE Character Studio (Klaus MCP + Claude-compatible)
 
-A Claude skill that turns a logo or mascot into a full **LINE character product line** with OpenAI GPT Image: it designs the character in many action poses, then builds upload-ready [LINE Creators Market](https://creator.line.me) packages for **stickers**, a complete **theme** and **emoji**, each as a validated ZIP with a preview.
+**Klaus MCP users:** Use the local command bridge in [klaus/PLAYBOOK.md](klaus/PLAYBOOK.md) through your existing Klaus shell/read_file tools. No Claude installation is required. The host supplies prompt/spec files and reviews previews; Python does image processing and LINE packaging. Paid OpenAI image generation requires explicit approval per batch.
+
+The original Claude-compatible skill turns a logo or mascot into a full **LINE character product line** with OpenAI GPT Image: it designs the character in many action poses, then builds upload-ready [LINE Creators Market](https://creator.line.me) packages for **stickers**, a complete **theme** and **emoji**, each as a validated ZIP with a preview.
 
 Built while making the mascot, stickers, theme and emoji for [hundredable.com](https://hundredable.com) — the workflow and scripts are general; the hundredable artwork is not included.
 

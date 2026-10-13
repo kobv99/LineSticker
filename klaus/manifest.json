@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "integration": "klaus-mcp-shell",
+  "repository": "kobv99/LineSticker",
+  "entrypoint": "tools/klaus_line_studio.py",
+  "transport": "local subprocess through Klaus shell",
+  "structured_output": "json",
+  "paid_action": "generate",
+  "paid_approval_flag": "--approve-cost",
+  "dry_run_flag": "--dry-run",
+  "commands": [
+    "doctor",
+    "generate",
+    "clean",
+    "compose-stickers",
+    "pack-stickers",
+    "preview-stickers",
+    "build-theme",
+    "pack-theme",
+    "preview-theme",
+    "make-emoji",
+    "build-skill"
+  ],
+  "tool_requirement": "mcp__Klaus_Patched_R2_Test__shell",
+  "version": "1.0"
+}

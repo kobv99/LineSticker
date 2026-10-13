@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+from font_utils import resolve_font_for_text
 
 BG = {"light": (140, 171, 216), "dark": (30, 30, 30)}     # LINE-ish default chat backgrounds
 INK = {"light": (255, 255, 255), "dark": (170, 170, 170)}
@@ -19,7 +20,11 @@ def main(src: Path, out: Path, theme: str = "light", scale: float = 0.75):
     rows = (len(files) + cols - 1) // cols
     sheet = Image.new("RGB", (cols * (cw + pad) + pad, rows * (ch + label_h + pad) + pad), BG[theme])
     d = ImageDraw.Draw(sheet)
-    f = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 18)
+    try:
+        path, index = resolve_font_for_text()
+        f = ImageFont.truetype(path, 18, index=index)
+    except (FileNotFoundError, ValueError, RuntimeError):
+        f = ImageFont.load_default()
     for i, p in enumerate(files):
         x = pad + (i % cols) * (cw + pad)
         y = pad + (i // cols) * (ch + label_h + pad)
